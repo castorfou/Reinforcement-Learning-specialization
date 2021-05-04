@@ -1,0 +1,4 @@
+conda create -n coursera_rl python=3.7
+conda activate coursera_rl
+conda install -c conda-forge jupyter_contrib_nbextensions tqdm
+conda install matplotlib numpy

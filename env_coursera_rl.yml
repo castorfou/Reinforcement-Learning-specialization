@@ -1,0 +1,6 @@
+name: coursera_rl
+channels:
+  - defaults
+dependencies:
+  - python=3.7
+prefix: /home/explore/miniconda3/envs/coursera_rl
