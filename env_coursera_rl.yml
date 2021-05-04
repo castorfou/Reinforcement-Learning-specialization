@@ -3,4 +3,8 @@ channels:
   - defaults
 dependencies:
   - python=3.7
+  - jupyter_contrib_nbextensions
+  - tqdm
+  - numpy
+  - matplotlib
 prefix: /home/explore/miniconda3/envs/coursera_rl
