@@ -15,3 +15,6 @@ sudo apt  install pdftk-java
 pdftk RLbook2018.pdf cat 1-216 output RLbook2018-part1.pdf
 pdftk RLbook2018.pdf cat 1-44 217-360 output RLbook2018-part2.pdf
 pdftk RLbook2018.pdf cat 1-44 361-548 output RLbook2018-part3.pdf
+
+
+Version 2020 exists at http://www.incompleteideas.net/book/the-book.html
