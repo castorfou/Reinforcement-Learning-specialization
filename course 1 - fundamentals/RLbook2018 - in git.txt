@@ -18,3 +18,9 @@ pdftk RLbook2018.pdf cat 1-44 361-548 output RLbook2018-part3.pdf
 
 
 Version 2020 exists at http://www.incompleteideas.net/book/the-book.html
+
+Solutions manual : http://fumblog.um.ac.ir/gallery/839/weatherwax_sutton_solutions_manual.pdf
+but based on an old version?
+
+Other solutions from https://github.com/LyWangPX/Reinforcement-Learning-2nd-Edition-by-Sutton-Exercise-Solutions
+
