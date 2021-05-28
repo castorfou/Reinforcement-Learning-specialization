@@ -369,7 +369,7 @@ class TDAgent(BaseAgent):
 # 
 # As we did with the environment, we first initialize the agent once when a TDAgent object is created. In this function, we create a random number generator, seeded with the seed provided in the agent_info dictionary to get reproducible results. We also set the policy, discount and step size based on the agent_info dictionary. Finally, with a convention that the policy is always specified as a mapping from states to actions and so is an array of size (# States, # Actions), we initialize a values array of shape (# States,) to zeros.
 
-# In[ ]:
+# In[71]:
 
 
 get_ipython().run_cell_magic('add_to', 'TDAgent', '\n# ---------------\n# Discussion Cell\n# ---------------\n\ndef agent_init(self, agent_info={}):\n    """Setup for the agent called when the experiment first starts."""\n\n    # Create a random number generator with the provided seed to seed the agent for reproducibility.\n    self.rand_generator = np.random.RandomState(agent_info.get("seed"))\n\n    # Policy will be given, recall that the goal is to accurately estimate its corresponding value function. \n    self.policy = agent_info.get("policy")\n    # Discount factor (gamma) to use in the updates.\n    self.discount = agent_info.get("discount")\n    # The learning rate or step size parameter (alpha) to use in updates.\n    self.step_size = agent_info.get("step_size")\n\n    # Initialize an array of zeros that will hold the values.\n    # Recall that the policy can be represented as a (# States, # Actions) array. With the \n    # assumption that this is the case, we can use the first dimension of the policy to\n    # initialize the array for values.\n    self.values = np.zeros((self.policy.shape[0],))')
@@ -379,7 +379,7 @@ get_ipython().run_cell_magic('add_to', 'TDAgent', '\n# ---------------\n# Discus
 # 
 # In agent_start(), we choose an action based on the initial state and policy we are evaluating. We also cache the state so that we can later update its value when we perform a Temporal Difference update. Finally, we return the action chosen so that the RL loop can continue and the environment can execute this action.
 
-# In[ ]:
+# In[72]:
 
 
 get_ipython().run_cell_magic('add_to', 'TDAgent', '\n# ---------------\n# Discussion Cell\n# ---------------\n\ndef agent_start(self, state):\n    """The first method called when the episode starts, called after\n    the environment starts.\n    Args:\n        state (Numpy array): the state from the environment\'s env_start function.\n    Returns:\n        The first action the agent takes.\n    """\n    # The policy can be represented as a (# States, # Actions) array. So, we can use \n    # the second dimension here when choosing an action.\n    action = self.rand_generator.choice(range(self.policy.shape[1]), p=self.policy[state])\n    self.last_state = state\n    return action')
@@ -394,27 +394,27 @@ get_ipython().run_cell_magic('add_to', 'TDAgent', '\n# ---------------\n# Discus
 # 
 # The latter of the two steps above has been implemented for you. Implement the former. Note that, unlike later in agent_end(), the episode has not yet ended in agent_step(). in other words, the previously observed state was not a terminal state.
 
-# In[ ]:
+# In[74]:
 
 
-get_ipython().run_cell_magic('add_to', 'TDAgent', '\n# -----------\n# Graded Cell\n# -----------\n\ndef agent_step(self, reward, state):\n    """A step taken by the agent.\n    Args:\n        reward (float): the reward received for taking the last action taken\n        state (Numpy array): the state from the\n            environment\'s step after the last action, i.e., where the agent ended up after the\n            last action\n    Returns:\n        The action the agent is taking.\n    """\n    \n    # Hint: We should perform an update with the last state given that we now have the reward and\n    # next state. We break this into two steps. Recall for example that the Monte-Carlo update \n    # had the form: V[S_t] = V[S_t] + alpha * (target - V[S_t]), where the target was the return, G_t.\n    \n    # your code here\n    \n\n    # Having updated the value for the last state, we now act based on the current \n    # state, and set the last state to be current one as we will next be making an \n    # update with it when agent_step is called next once the action we return from this function \n    # is executed in the environment.\n\n    action = self.rand_generator.choice(range(self.policy.shape[1]), p=self.policy[state])\n    self.last_state = state\n\n    return action')
+get_ipython().run_cell_magic('add_to', 'TDAgent', '\n# -----------\n# Graded Cell\n# -----------\n\ndef agent_step(self, reward, state):\n    """A step taken by the agent.\n    Args:\n        reward (float): the reward received for taking the last action taken\n        state (Numpy array): the state from the\n            environment\'s step after the last action, i.e., where the agent ended up after the\n            last action\n    Returns:\n        The action the agent is taking.\n    """\n    \n    # Hint: We should perform an update with the last state given that we now have the reward and\n    # next state. We break this into two steps. Recall for example that the Monte-Carlo update \n    # had the form: V[S_t] = V[S_t] + alpha * (target - V[S_t]), where the target was the return, G_t.\n    \n    # your code here\n    self.values[self.last_state] = self.values[self.last_state] + self.step_size * ( reward + self.discount * self.values[state] - self.values[self.last_state])\n    \n\n    # Having updated the value for the last state, we now act based on the current \n    # state, and set the last state to be current one as we will next be making an \n    # update with it when agent_step is called next once the action we return from this function \n    # is executed in the environment.\n\n    action = self.rand_generator.choice(range(self.policy.shape[1]), p=self.policy[state])\n    self.last_state = state\n\n    return action')
 
 
 # ## *Implement* agent_end() 
 # 
 # Implement the TD update for the case where an action leads to a terminal state.
 
-# In[ ]:
+# In[75]:
 
 
-get_ipython().run_cell_magic('add_to', 'TDAgent', '\n# -----------\n# Graded Cell\n# -----------\n\ndef agent_end(self, reward):\n    """Run when the agent terminates.\n    Args:\n        reward (float): the reward the agent received for entering the terminal state.\n    """\n    \n    # Hint: Here too, we should perform an update with the last state given that we now have the \n    # reward. Note that in this case, the action led to termination. Once more, we break this into \n    # two steps, computing the target and the update itself that uses the target and the \n    # current value estimate for the state whose value we are updating.\n    \n    # your code here\n    ')
+get_ipython().run_cell_magic('add_to', 'TDAgent', '\n# -----------\n# Graded Cell\n# -----------\n\ndef agent_end(self, reward):\n    """Run when the agent terminates.\n    Args:\n        reward (float): the reward the agent received for entering the terminal state.\n    """\n    \n    # Hint: Here too, we should perform an update with the last state given that we now have the \n    # reward. Note that in this case, the action led to termination. Once more, we break this into \n    # two steps, computing the target and the update itself that uses the target and the \n    # current value estimate for the state whose value we are updating.\n    \n    # your code here\n    self.values[self.last_state] = self.values[self.last_state] + self.step_size * ( reward - self.values[self.last_state])\n    \n    ')
 
 
 # ## agent_cleanup()
 # 
 # In cleanup, we simply reset the last state to be None to ensure that we are not storing any states past an episode.
 
-# In[ ]:
+# In[76]:
 
 
 get_ipython().run_cell_magic('add_to', 'TDAgent', '\n# ---------------\n# Discussion Cell\n# ---------------\n\ndef agent_cleanup(self):\n    """Cleanup done after the agent ends."""\n    self.last_state = None')
@@ -424,13 +424,13 @@ get_ipython().run_cell_magic('add_to', 'TDAgent', '\n# ---------------\n# Discus
 # 
 # agent_message() can generally be used to get different kinds of information about an RLGlue agent in the interaction loop of RLGlue. Here, we conditonally check for a message matching "get_values" and use it to retrieve the values table the agent has been updating over time.
 
-# In[ ]:
+# In[77]:
 
 
 get_ipython().run_cell_magic('add_to', 'TDAgent', '\n# ---------------\n# Discussion Cell\n# ---------------\n\ndef agent_message(self, message):\n    """A function used to pass information from the agent to the experiment.\n    Args:\n        message: The message passed to the agent.\n    Returns:\n        The response (or answer) to the message.\n    """\n    if message == "get_values":\n        return self.values\n    else:\n        raise Exception("TDAgent.agent_message(): Message not understood!")')
 
 
-# In[ ]:
+# In[78]:
 
 
 # --------------
@@ -471,7 +471,7 @@ agent.agent_end(reward)
 assert(np.isclose(agent.values[0], -10))
 
 
-# In[ ]:
+# In[79]:
 
 
 # -----------
@@ -513,7 +513,7 @@ for n in range(100):
 # 
 # The code below runs one run of an experiment given env_info and agent_info dictionaries. A "manager" object is created for visualizations and is used in part for the autograder. By default, the run will be for 5000 episodes. The true_values_file is specified to compare the learned value function with the values stored in the true_values_file. Plotting of the learned value  function occurs by default after every 100 episodes. In addition, when true_values_file is specified, the value error per state and the root mean square value error will also be plotted.
 
-# In[ ]:
+# In[80]:
 
 
 get_ipython().run_line_magic('matplotlib', 'notebook')
@@ -542,7 +542,7 @@ def run_experiment(env_info, agent_info,num_episodes=5000, experiment_name=None,
 
 # The cell below just runs a policy evaluation experiment with the determinstic optimal policy that strides just above the cliff. You should observe that the per state value error and RMSVE curve asymptotically go towards 0. The arrows in the four directions denote the probabilities of taking each action. This experiment is ungraded but should serve as a good test for the later experiments. The true values file provided for this experiment may help with debugging as well.
 
-# In[ ]:
+# In[81]:
 
 
 # ---------------
@@ -566,7 +566,7 @@ _ = run_experiment(env_info, agent_info, num_episodes=5000, experiment_name="Pol
                    plot_freq=500, true_values_file=true_values_file)
 
 
-# In[ ]:
+# In[89]:
 
 
 # -----------
@@ -588,9 +588,19 @@ env.env_init(env_info)
 
 # modify the uniform random policy
 # your code here
+policy[36] = [1, 0, 0, 0]
+policy[24] = [1, 0, 0, 0]
+policy[12] = [1, 0, 0, 0]
+
+for i in range(0, 11):
+    policy[i] = [0, 0, 0, 1]
+policy[11] = [0, 0, 1, 0]
+policy[23] = [0, 0, 1, 0]
+policy[35] = [0, 0, 1, 0]
+policy[47] = [0, 0, 1, 0]
 
 
-# In[ ]:
+# In[90]:
 
 
 # -----------
@@ -602,11 +612,13 @@ env.env_init(env_info)
 width = env_info['grid_width']
 height = env_info['grid_height']
 
+print(f'width {width} height {height}')
+
 # left side of space
 for x in range(1, height):
     s = env.state((x, 0))
     
-    # go up
+    # go up'
     assert np.all(policy[s] == [1, 0, 0, 0])
 
 # top of space
@@ -621,10 +633,11 @@ for x in range(height):
     s = env.state((x, width - 1))
     
     # go down
+    print(f's{s} x{x}/height{height}')
     assert np.all(policy[s] == [0, 0, 1, 0])
 
 
-# In[ ]:
+# In[91]:
 
 
 # ---------------
@@ -635,7 +648,7 @@ agent_info.update({"policy": policy})
 v = run_experiment(env_info, agent_info, experiment_name="Policy Evaluation On Safe Policy", num_episodes=5000, plot_freq=500)
 
 
-# In[ ]:
+# In[92]:
 
 
 # ---------------
@@ -661,7 +674,7 @@ agent_info.update({"policy": policy})
 agent_info.update({"step_size": 0.01})
 
 
-# In[ ]:
+# In[93]:
 
 
 # ---------------
