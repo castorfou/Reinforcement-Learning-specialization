@@ -7,4 +7,5 @@ dependencies:
   - tqdm
   - numpy
   - matplotlib
+  - scipy
 prefix: /home/explore/miniconda3/envs/coursera_rl

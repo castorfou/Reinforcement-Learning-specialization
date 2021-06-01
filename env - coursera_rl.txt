@@ -3,3 +3,4 @@ conda activate coursera_rl
 conda install -c conda-forge jupyter_contrib_nbextensions tqdm
 conda install matplotlib numpy
 pip install jdc
+conda install scipy
