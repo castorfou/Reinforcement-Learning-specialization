@@ -8,4 +8,5 @@ dependencies:
   - numpy
   - matplotlib
   - scipy
+  - gym
 prefix: /home/explore/miniconda3/envs/coursera_rl
