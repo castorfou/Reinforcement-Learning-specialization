@@ -25,7 +25,7 @@
 # - [shutil](https://docs.python.org/3/library/shutil.html): Package used to operate on files and folders. Here we use it for creating a zip file of the results folder.
 # - plot_script: Used for plotting learning curves using matplotlib.
 
-# In[2]:
+# In[1]:
 
 
 # Do not modify this cell!
@@ -55,7 +55,7 @@ from plot_script import plot_result
 # 
 # We have already provided `get_action_values()` and `get_TD_update()` methods. The former computes the action-value function by doing a forward pass and the latter computes the gradient of the action-value function with respect to the weights times the TD error. These `get_action_values()` and `get_TD_update()` methods are similar to the `get_value()` and `get_gradient()` methods that you implemented in Course 3 Assignment 2. The main difference is that in this notebook, they are designed to be applied to batches of states instead of one state. You will later use these functions for implementing the agent.
 
-# In[ ]:
+# In[2]:
 
 
 # -----------
@@ -75,6 +75,7 @@ class ActionValueNetwork:
         
         # Specify self.layer_sizes which shows the number of nodes in each layer
         # your code here
+        self.layer_sizes = [self.state_dim, self.num_hidden_units, self.num_actions]
         
         
         # Initialize the weights of the neural network
@@ -178,7 +179,7 @@ class ActionValueNetwork:
 
 # Run the cell below to test your implementation of the `__init__()` function for ActionValueNetwork:
 
-# In[ ]:
+# In[3]:
 
 
 # --------------
@@ -197,7 +198,7 @@ print("layer_sizes:", test_network.layer_sizes)
 assert(np.allclose(test_network.layer_sizes, np.array([5, 20, 3])))
 
 
-# In[ ]:
+# In[4]:
 
 
 # -----------
@@ -247,7 +248,7 @@ for _ in range(1000):
 # 
 # In the cell below, you will implement the `__init__()` and `update_weights()` methods for the Adam algorithm. In `__init__()`, you will initialize `self.m` and `self.v`. In `update_weights()`, you will compute new weights given the input weights and an update $g$ (here `td_errors_times_gradients`) according to the equations above.
 
-# In[ ]:
+# In[5]:
 
 
 ### Work Required: Yes. Fill in code in __init__ and update_weights (~9-11 Lines).
@@ -278,6 +279,10 @@ class Adam():
             self.v[i]["b"] = None
             
             # your code here
+            self.m[i]["W"] = np.zeros((self.layer_sizes[i], self.layer_sizes[i+1]))
+            self.m[i]["b"] = np.zeros((1, self.layer_sizes[i+1]))
+            self.v[i]["W"] = np.zeros((self.layer_sizes[i], self.layer_sizes[i+1]))
+            self.v[i]["b"] = np.zeros((1, self.layer_sizes[i+1]))
             
             
         # Notice that to calculate m_hat and v_hat, we use powers of beta_m and beta_v to 
@@ -308,6 +313,11 @@ class Adam():
                 weight_update = None
                 
                 # your code here
+                self.m[i][param] = self.beta_m * self.m[i][param] + ( 1 - self.beta_m ) * td_errors_times_gradients[i][param]
+                self.v[i][param] = self.beta_v * self.v[i][param] + ( 1 - self.beta_v ) * np.square(td_errors_times_gradients[i][param])
+                m_hat = self.m[i][param] / ( 1 - self.beta_m_product )
+                v_hat = self.v[i][param] / ( 1 - self.beta_v_product )
+                weight_update = self.step_size * m_hat / ( np.sqrt(v_hat) +self.epsilon )
                 
                 
                 weights[i][param] = weights[i][param] + weight_update
@@ -321,7 +331,7 @@ class Adam():
 
 # Run the following code to test your implementation of the `__init__()` function:
 
-# In[ ]:
+# In[6]:
 
 
 # --------------
@@ -374,7 +384,7 @@ assert(np.all(test_adam.v[1]["W"]==0))
 assert(np.all(test_adam.v[1]["b"]==0))
 
 
-# In[ ]:
+# In[7]:
 
 
 # -----------
@@ -453,7 +463,7 @@ for _ in range(1000):
 # 
 # You will use the `append()` and `sample()` functions when implementing the agent.
 
-# In[ ]:
+# In[8]:
 
 
 # ---------------
@@ -515,7 +525,7 @@ class ReplayBuffer:
 # - subtract the maximum preference across the actions from the preferences to avoid overflow, and,
 # - compute the probability of taking each action.
 
-# In[ ]:
+# In[9]:
 
 
 # -----------
@@ -539,7 +549,8 @@ def softmax(action_values, tau=1.0):
     max_preference = None
     
     # your code here
-    
+    preferences = action_values / tau
+    max_preference = np.max(preferences, axis=1)
     
     
     # Reshape max_preference array which has shape [Batch,] to [Batch, 1]. This allows NumPy broadcasting 
@@ -552,7 +563,8 @@ def softmax(action_values, tau=1.0):
     sum_of_exp_preferences = None
     
     # your code here
-    
+    exp_preferences = np.exp( preferences - reshaped_max_preference  )
+    sum_of_exp_preferences = np.sum( exp_preferences , axis=1)
     
     
     # Reshape sum_of_exp_preferences array which has shape [Batch,] to [Batch, 1] to  allow for NumPy broadcasting 
@@ -563,7 +575,7 @@ def softmax(action_values, tau=1.0):
     action_probs = None
     
     # your code here
-    
+    action_probs = exp_preferences / reshaped_sum_of_exp_preferences
     
     
     # squeeze() removes any singleton dimensions. It is used here because this function is used in the 
@@ -575,7 +587,7 @@ def softmax(action_values, tau=1.0):
 
 # Run the cell below to test your implementation of the `softmax()` function:
 
-# In[ ]:
+# In[10]:
 
 
 # --------------
@@ -598,7 +610,7 @@ assert(np.allclose(action_probs, np.array([
 print("Passed the asserts! (Note: These are however limited in scope, additional testing is encouraged.)")
 
 
-# In[ ]:
+# In[11]:
 
 
 # -----------
@@ -653,7 +665,7 @@ for _ in range(1000):
 # 
 # You will implement these steps in the `get_td_error()` function below which given a batch of experiences (including states, next_states, actions, rewards, terminals), fixed action-value network (current_q), and action-value network (network), computes the TD error in the form of a 1D array of size batch_size.
 
-# In[ ]:
+# In[12]:
 
 
 ### Work Required: Yes. Fill in code in get_td_error (~9 Lines).
@@ -684,6 +696,7 @@ def get_td_error(states, next_states, actions, rewards, discount, terminals, net
     q_next_mat = None
     ### END CODE HERE
     # your code here
+    q_next_mat = current_q.get_action_values(next_states)
     
     
     # Compute policy at next state by passing the action-values in q_next_mat to softmax()
@@ -693,6 +706,7 @@ def get_td_error(states, next_states, actions, rewards, discount, terminals, net
     probs_mat = None
     ### END CODE HERE
     # your code here
+    probs_mat = softmax(q_next_mat, tau)
     
     
     # Compute the estimate of the next state value, v_next_vec.
@@ -704,6 +718,7 @@ def get_td_error(states, next_states, actions, rewards, discount, terminals, net
     v_next_vec = None
     ### END CODE HERE
     # your code here
+    v_next_vec = np.sum( q_next_mat * probs_mat, axis=1 ) * (1-terminals)
     
     
     # Compute Expected Sarsa target
@@ -713,6 +728,7 @@ def get_td_error(states, next_states, actions, rewards, discount, terminals, net
     target_vec = None
     ### END CODE HERE
     # your code here
+    target_vec = rewards + discount * v_next_vec
     
     
     # Compute action values at the current states for all actions using network
@@ -722,6 +738,7 @@ def get_td_error(states, next_states, actions, rewards, discount, terminals, net
     q_mat = None
     ### END CODE HERE
     # your code here
+    q_mat = network.get_action_values(states)
     
     
     # Batch Indices is an array from 0 to the batch size - 1. 
@@ -735,7 +752,7 @@ def get_td_error(states, next_states, actions, rewards, discount, terminals, net
     q_vec = None
     ### END CODE HERE
     # your code here
-    
+    q_vec= q_mat[batch_indices, actions]
     
     # Compute TD errors for actions taken
     # Note that delta_vec is a 1D array of shape (batch_size)
@@ -744,6 +761,7 @@ def get_td_error(states, next_states, actions, rewards, discount, terminals, net
     delta_vec = None
     ### END CODE HERE
     # your code here
+    delta_vec = target_vec - q_vec
     
     
     return delta_vec
@@ -751,7 +769,7 @@ def get_td_error(states, next_states, actions, rewards, discount, terminals, net
 
 # Run the following code to test your implementation of the `get_td_error()` function:
 
-# In[ ]:
+# In[13]:
 
 
 # --------------
@@ -787,7 +805,7 @@ assert(np.allclose(delta_vec, answer_delta_vec))
 print("Passed the asserts! (Note: These are however limited in scope, additional testing is encouraged.)")
 
 
-# In[ ]:
+# In[14]:
 
 
 # -----------
@@ -829,7 +847,7 @@ assert(np.allclose(delta_vec, answer_delta_vec))
 # - pass the TD-errors matrix to the `get_TD_update()` function of network to calculate the gradients times TD errors, and,
 # - perform an ADAM optimizer step.
 
-# In[ ]:
+# In[15]:
 
 
 # -----------
@@ -874,6 +892,7 @@ def optimize_network(experiences, discount, optimizer, network, current_q, tau):
     td_update = None
     ### END CODE HERE
     # your code here
+    td_update = network.get_TD_update(states, delta_mat)
     
     
     # Pass network.get_weights and the td_update to the optimizer to get updated weights
@@ -881,6 +900,7 @@ def optimize_network(experiences, discount, optimizer, network, current_q, tau):
     weights = None
     ### END CODE HERE
     # your code here
+    weights = optimizer.update_weights(network.get_weights(), td_update)
     
     
     network.set_weights(weights)
@@ -888,7 +908,7 @@ def optimize_network(experiences, discount, optimizer, network, current_q, tau):
 
 # Run the following code to test your implementation of the `optimize_network()` function:
 
-# In[ ]:
+# In[16]:
 
 
 # -----------
@@ -942,7 +962,7 @@ assert(np.allclose(updated_weights[1]["b"], answer_updated_weights[1]["b"]))
 # - add transitions (consisting of the state, action, reward, terminal, and next state) to the replay buffer, and,
 # - update the weights of the neural network by doing multiple replay steps and calling the `optimize_network()` function that you implemented above.
 
-# In[ ]:
+# In[17]:
 
 
 # -----------
@@ -1038,13 +1058,14 @@ class Agent(BaseAgent):
 
         # Select action
         # your code here
+        action = self.policy(state)
         
         
         # Append new experience to replay buffer
         # Note: look at the replay_buffer append function for the order of arguments
 
         # your code here
-        
+        self.replay_buffer.append(self.last_state, self.last_action, reward, 0, state)       
         
         # Perform replay steps:
         if self.replay_buffer.size() > self.replay_buffer.minibatch_size:
@@ -1056,6 +1077,7 @@ class Agent(BaseAgent):
                 
                 # Call optimize_network to update the weights of the network (~1 Line)
                 # your code here
+                optimize_network(experiences, self.discount, self.optimizer, self.network, current_q, self.tau)
                 
                 
         # Update the last state and last action.
@@ -1064,6 +1086,8 @@ class Agent(BaseAgent):
         self.last_action = None
         ### END CODE HERE
         # your code here
+        self.last_state = state
+        self.last_action = action
         
         
         return action
@@ -1085,8 +1109,9 @@ class Agent(BaseAgent):
         # Append new experience to replay buffer
         # Note: look at the replay_buffer append function for the order of arguments
         
-        # your code here
         
+        # your code here
+        self.replay_buffer.append(self.last_state, self.last_action, reward, 1, state)      
         
         # Perform replay steps:
         if self.replay_buffer.size() > self.replay_buffer.minibatch_size:
@@ -1098,6 +1123,7 @@ class Agent(BaseAgent):
                 
                 # Call optimize_network to update the weights of the network
                 # your code here
+                optimize_network(experiences, self.discount, self.optimizer, self.network, current_q, self.tau)
                 
                 
         
@@ -1110,7 +1136,7 @@ class Agent(BaseAgent):
 
 # Run the following code to test your implementation of the `agent_step()` function:
 
-# In[ ]:
+# In[18]:
 
 
 # -----------
@@ -1193,7 +1219,7 @@ for i in range(5):
 
 # Run the following code to test your implementation of the `agent_end()` function:
 
-# In[ ]:
+# In[19]:
 
 
 # -----------
@@ -1272,7 +1298,7 @@ for i in range(5):
 # 
 # Now that you implemented the agent, we can use it to run an experiment on the Lunar Lander problem. We will plot the learning curve of the agent to visualize learning progress. To plot the learning curve, we use the sum of rewards in an episode as the performance measure. We have provided for you the experiment/plot code in the cell below which you can go ahead and run. Note that running the cell below has taken approximately 10 minutes in prior testing.
 
-# In[ ]:
+# In[20]:
 
 
 # ---------------
@@ -1354,7 +1380,7 @@ run_experiment(current_env, current_agent, environment_parameters, agent_paramet
 
 # Run the cell below to see the comparison between the agent that you implemented and a random agent for the one run and 300 episodes. Note that the `plot_result()` function smoothes the learning curve by applying a sliding window on the performance measure. 
 
-# In[ ]:
+# In[23]:
 
 
 plot_result(["expected_sarsa_agent", "random_agent"])
@@ -1362,7 +1388,7 @@ plot_result(["expected_sarsa_agent", "random_agent"])
 
 # In the following cell you can visualize the performance of the agent with a correct implementation. As you can see, the agent initially crashes quite quickly (Episode 0). Then, the agent learns to avoid crashing by expending fuel and staying far above the ground. Finally however, it learns to land smoothly within the landing zone demarcated by the two flags (Episode 275).
 
-# In[ ]:
+# In[24]:
 
 
 get_ipython().run_cell_magic('HTML', '', '<div align="middle">\n<video width="80%" controls>\n      <source src="ImplementYourAgent.mp4" type="video/mp4">\n</video></div>')
@@ -1391,3 +1417,9 @@ get_ipython().run_cell_magic('HTML', '', '<div align="middle">\n<video width="80
 # 3. Click on "PA2 Data-file Grader" and upload your results.zip.
 # 
 # ***These account for 25% of the marks, so don't forget to do so!***
+
+# In[ ]:
+
+
+
+

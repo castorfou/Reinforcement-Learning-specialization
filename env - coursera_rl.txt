@@ -5,3 +5,6 @@ conda install matplotlib numpy
 pip install jdc
 conda install scipy
 conda install -c conda-forge gym
+conda install swig
+pip install box2d-py
+
