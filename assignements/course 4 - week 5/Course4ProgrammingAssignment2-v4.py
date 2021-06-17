@@ -25,7 +25,7 @@
 # - [shutil](https://docs.python.org/3/library/shutil.html): Package used to operate on files and folders. Here we use it for creating a zip file of the results folder.
 # - plot_script: Used for plotting learning curves using matplotlib.
 
-# In[1]:
+# In[2]:
 
 
 # Do not modify this cell!
